@@ -86,7 +86,7 @@ module Delayed
 
       def invoke_job
         hook :before
-        payload_object.perform
+        payload_object.perform(self)
         hook :success
       rescue Exception => e
         hook :error, e
