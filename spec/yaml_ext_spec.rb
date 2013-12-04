@@ -1,31 +1,35 @@
-require 'spec_helper'
+require 'helper'
 
-describe YAML do
-  it "should autoload classes that are unknown at runtime" do
-    lambda {
-      obj = YAML.load("--- !ruby/object:Autoloaded::Clazz {}")
-      obj.class.to_s.should == 'Autoloaded::Clazz'
-    }.should_not raise_error
+describe "YAML" do
+  it "autoloads classes" do
+    expect {
+      yaml = "--- !ruby/class Autoloaded::Clazz\n"
+      expect(YAML.load(yaml)).to eq(Autoloaded::Clazz)
+    }.not_to raise_error
   end
 
-  it "should autoload structs that are unknown at runtime" do
-    lambda {
-      obj = YAML.load("--- !ruby/struct:Autoloaded::Struct {}")
-      obj.class.to_s.should == 'Autoloaded::Struct'
-    }.should_not raise_error
+  it "autoloads the class of a struct" do
+    expect {
+      yaml = "--- !ruby/class Autoloaded::Struct\n"
+      expect(YAML.load(yaml)).to eq(Autoloaded::Struct)
+    }.not_to raise_error
   end
 
-  # As we're overriding some of Yaml's internals it is best that our changes
-  # don't impact other places where Yaml is used. Or at least don't make it
-  # look like the exception is caused by DJ
-  it "should not raise exception on poorly formatted yaml" do
-    lambda do
-      YAML.load(<<-EOYAML
-default:
-  <<: *login
-EOYAML
-      )
-    end.should_not raise_error
+  it "autoloads the class for the instance of a struct" do
+    expect {
+      yaml = "--- !ruby/struct:Autoloaded::InstanceStruct {}"
+      expect(YAML.load(yaml).class).to eq(Autoloaded::InstanceStruct)
+    }.not_to raise_error
   end
-  
+
+  it "autoloads the class for the instance" do
+    expect {
+      yaml = "--- !ruby/object:Autoloaded::InstanceClazz {}\n"
+      expect(YAML.load(yaml).class).to eq(Autoloaded::InstanceClazz)
+    }.not_to raise_error
+  end
+
+  it "does not throw an uninitialized constant Syck::Syck when using YAML.load with poorly formed yaml" do
+    expect{ YAML.load(YAML.dump("foo: *bar"))}.not_to raise_error
+  end
 end
